@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Plot</title>
+</head>
+<body>
+    <form id="upload-form">
+        <input type="file" name="file" id="file" accept=".csv">
+        <button type="submit">Upload CSV</button>
+    </form>
+
+    <div id="loading" style="display: none;">Loading for 0s</div>
+    <div id="plotly-plot"></div>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <script> 
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+        
+            const loadingElement = document.getElementById('loading');
+            loadingElement.style.display = 'block';
+            let loadingTime = 0;
+            const updateInterval = 100; // Update every 100ms (0.1s)
+            const loadingTimer = setInterval(() => {
+              loadingTime += updateInterval;
+              loadingElement.innerText = `Loading for ${(loadingTime / 1000).toFixed(1)}s`;
+            }, updateInterval);
+
+
+            const formData = new FormData(e.target);
+            const response = await fetch('/plotApp/process_csv/', {
+                method: 'POST',
+                body: formData,
+            });
+            if (response.ok) {
+                const jsonResponse = await response.json();
+                const plotData = JSON.parse(jsonResponse.plot_data);
+                // Hide the loading element and stop updating the text
+                clearInterval(loadingTimer);
+                loadingElement.style.display = 'none';
+                if(plotData){
+                    Plotly.newPlot('plotly-plot', plotData.data, plotData.layout);
+                } else {
+                    alert('Error processing CSV file');
+                }
+  
+
+            } else {
+                alert('Error processing CSV file');
+            }
+        });
+    </script>
+</body>
+</html>
